@@ -7,7 +7,7 @@ class Player:
         self.name = name
         self.conn = conn
         self.address = address
-        self.choice = ""
+        self.choice = "" #eleccion (piedra, papel, tijera)
         self.puntos = puntos
 
 class Juego():
@@ -33,30 +33,18 @@ class Juego():
 
     def hilo_admin(self):
         try:
+            conn_adm, address_adm = self.socket_admin.accept()
+            print("se ha conectado un Administrador %s" % str(address_adm))
             while True:
                 try:
-                    conn_adm, address_adm = self.socket_admin.accept()
-                    threading.Thread(name="atender_admin",target=self.atender_admin,args=((conn_adm),)).start()
-                except:
+                    mensaje_admin = str(conn_adm.recv(1024).decode())
+                    self.dar_respuesta(mensaje_admin, conn_adm, Player)
+                except Exception as e:
+                    print(e)
                     break
         except Exception as e:
             print(e)
             return
-    def atender_admin(self, conn_adm):
-        print("Ingreso un Administrador: %s" % str(conn_adm))
-        while True:
-            try:
-                mensaje_admin = str(conn_adm.recv(1024).decode())
-                if mensaje_admin == "salir":
-                    print("Administrador a Salido: %s" % str(conn_adm))
-                    conn_adm.close()
-                    break
-                self.dar_respuesta(mensaje_admin, conn_adm, Player)
-            except Exception as e:
-                print(e)
-
-                break
-        return
 
     def hilos_para_jugadores(self):
         print("Esperando Conexiones")
@@ -80,8 +68,6 @@ class Juego():
                     player2 = Player(next_id, "Player 2", conn, address)
                     print("Se conecto el jugador 2: " + str(address))
                     mensaje2 = str(player2.conn.recv(1024).decode())
-                    if len(mensaje2)<1:
-                        mensaje2="no_conexion"
                     self.dar_respuesta(mensaje2, conn, player2)
                     next_id = next_id + 1
                 except Exception as e:
@@ -104,6 +90,16 @@ class Juego():
         cursor = conexion.cursor()
 
         return (conexion,cursor)
+
+    def cambiar_estado(self, jugador):
+        try:
+            conexion, cursor = self.conexion_bd()
+            sql = "UPDATE jugadores SET Estado='inactivo' WHERE Usuario = '%s'" % (str(jugador))
+            cursor.execute(sql)
+            conexion.commit()
+        except Exception as e:
+            print(e)
+            return
 
     def dar_respuesta(self, mensaje, direccion_ip, player):
         try:
@@ -163,6 +159,8 @@ class Juego():
                         respuesta=str(result)
                     except:
                         respuesta = "no registros"
+                elif mensaje[0] == "saliendo":
+                    self.cambiar_estado(mensaje[1])
                 direccion_ip.send(respuesta.encode("utf-8"))
         except Exception as e:
             print(e)
@@ -176,6 +174,56 @@ class GameThread (threading.Thread):
         self.player1 = player1
         self.player2 = player2
 
+    def run(self):
+        while True:
+            try:
+                respuesta1 = str(self.player1.conn.recv(1024).decode())
+                respuesta2 = str(self.player2.conn.recv(1024).decode())
+                respuesta1 = respuesta1.split("/")
+                respuesta2 = respuesta2.split("/")
+                print(respuesta1)
+                print(respuesta2)
+                if respuesta1[0] == "esperando" and respuesta2[0] == "esperando":
+                    mensaje1 = "run_juego/%s" % str(self.player2.name)  # se envia mensaje para iniciar el juego
+                    mensaje2 = "run_juego/%s" % str(self.player1.name)  # se envia mensaje para iniciar el juego
+                    self.player1.conn.send(mensaje1.encode("utf-8"))
+                    self.player2.conn.send(mensaje2.encode("utf-8"))
+                    pass
+                elif respuesta1[0] == "eleccion" and respuesta2[0] == "eleccion":
+                    self.player1.choice = respuesta1[1]
+                    self.player2.choice = respuesta2[1]
+                    ganador = int(self.obtener_ganador(str(self.player1.choice), str(self.player2.choice)))
+                    #self.dar_puntuacion(ganador)
+                    self.guardar_juego([self.player1,self.player2],int(ganador))
+                    mensaje = "fin_juego/%i/%s/%s/1" % (ganador,str(self.player1.choice),str(self.player2.choice))
+                    self.player1.conn.send(mensaje.encode("utf-8"))
+                    mensaje = "fin_juego/%i/%s/%s/2" % (ganador,str(self.player2.choice),str(self.player1.choice))
+                    self.player2.conn.send(mensaje.encode("utf-8"))
+            except:
+                self.actualizar_estado(self.player1.name)
+                self.actualizar_estado(self.player2.name)
+                try:
+                    try:
+                        mensaje = "error/%s" % (str(self.player2.name))
+                        self.player1.conn.send(mensaje.encode("utf-8"))
+                        print("El jugador 2 salio: (%s)" % (str(self.player2.conn)))
+                        self.actualizar_estado(self.player2.name)
+                        break
+                    except:
+                        try:
+                            mensaje = "error/%s" % (str(self.player1.name))
+                            self.player2.conn.send(mensaje.encode("utf-8"))
+                            print("El jugador 1 salio: (%s)" % (str(self.player1.conn)))
+                            self.actualizar_estado(self.player1.name)
+                        except:
+                            break
+                    break
+                except:
+                    try:
+                        self.player1.conn.close()
+                        self.player2.conn.close()
+                    finally:
+                        break
     def obtener_ganador(self, player1_choice, player2_choice):
         victoria = 10
         empate = 5
@@ -249,56 +297,7 @@ class GameThread (threading.Thread):
             print(e)
             return
 
-    def run(self):
-        while True:
-            try:
-                respuesta1 = str(self.player1.conn.recv(1024).decode())
-                respuesta2 = str(self.player2.conn.recv(1024).decode())
-                respuesta1 = respuesta1.split("/")
-                respuesta2 = respuesta2.split("/")
-                print(respuesta1)
-                print(respuesta2)
-                if respuesta1[0] == "esperando" and respuesta2[0] == "esperando":
-                    mensaje1 = "run_juego/%s" % str(self.player2.name)  # se envia mensaje para iniciar el juego
-                    mensaje2 = "run_juego/%s" % str(self.player1.name)  # se envia mensaje para iniciar el juego
-                    self.player1.conn.send(mensaje1.encode("utf-8"))
-                    self.player2.conn.send(mensaje2.encode("utf-8"))
-                    pass
-                elif respuesta1[0] == "eleccion" and respuesta2[0] == "eleccion":
-                    self.player1.choice = respuesta1[1]
-                    self.player2.choice = respuesta2[1]
-                    ganador = int(self.obtener_ganador(str(self.player1.choice), str(self.player2.choice)))
-                    #self.dar_puntuacion(ganador)
-                    self.guardar_juego([self.player1,self.player2],int(ganador))
-                    mensaje = "fin_juego/%i/%s/%s/1" % (ganador,str(self.player1.choice),str(self.player2.choice))
-                    self.player1.conn.send(mensaje.encode("utf-8"))
-                    mensaje = "fin_juego/%i/%s/%s/2" % (ganador,str(self.player2.choice),str(self.player1.choice))
-                    self.player2.conn.send(mensaje.encode("utf-8"))
-            except:
-                self.actualizar_estado(self.player1.name)
-                self.actualizar_estado(self.player2.name)
-                try:
-                    try:
-                        mensaje = "error/%s" % (str(self.player2.name))
-                        self.player1.conn.send(mensaje.encode("utf-8"))
-                        print("El jugador 2 salio: (%s)" % (str(self.player2.conn)))
-                        self.actualizar_estado(self.player2.name)
-                        break
-                    except:
-                        try:
-                            mensaje = "error/%s" % (str(self.player1.name))
-                            self.player2.conn.send(mensaje.encode("utf-8"))
-                            print("El jugador 1 salio: (%s)" % (str(self.player1.conn)))
-                            self.actualizar_estado(self.player1.name)
-                        except:
-                            break
-                    break
-                except:
-                    try:
-                        self.player1.conn.close()
-                        self.player2.conn.close()
-                    finally:
-                        break
+
 
 
 def main():

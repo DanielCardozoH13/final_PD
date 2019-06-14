@@ -40,10 +40,23 @@ class Table(Frame):
 class interfaz_grafica():
     def __init__(self,ip, puert_player, puert_admin):
         self.principal = Tk()
-        self.principal.title("Piedra, Papel o Tijera")
+        self.principal.title("JaJanKen")
         self.principal.geometry("650x470")
         self.principal.resizable(False, False)
         self.principal.protocol("WM_DELETE_WINDOW", self.cerrando)
+        # Coleres para la interfaz.
+        self.color_btn_salir = "#FA5858"
+        self.color_btn_ingresar = "#30a862"
+        self.color_btn_registrar = "#58ACFA"
+        self.color_btn_admin = "#F2F5A9"
+        self.color_btn_tablas = "#ff9e40"
+        self.color_btn_piedra = "#857460"
+        self.color_btn_papel = "#ffffbf"
+        self.color_btn_tijera = "#d5303e"
+        self.color_label_elecci = "#f5f2f2"
+        self.fondo = "#E0F2F7"
+
+        self.principal.config(bg=self.fondo)
         self.ip = ip
         self.puert_player = puert_player
         self.puert_admin = puert_admin
@@ -56,42 +69,41 @@ class interfaz_grafica():
     def cerrando(self, event=None):
         print("saliendo")
         try:
+            mensaje = "saliendo/%s" % str(self.player_nombre)
+            self.sock_players.send(mensaje.encode())
             self.sock_players.close()
         except:
-            pass
-        try:
-            mensaje = "saliendo/%s" % str(self.player_nombre)
-            print(mensaje)
-            self.sock_players.send(mensaje.encode())
-            self.sock_admin.send("salir".encode())
-            self.sock_admin.close()
-        except:
-            pass
-        self.principal.quit()
-        self.principal.destroy()
+            try:
+                mensaje = "saliendo/%s" % str(self.admin_name)
+                self.sock_admin.send(mensaje.encode())
+                self.sock_admin.close()
+            except:
+                pass
+        finally:
+            self.principal.quit()
+            #self.principal.destroy()
 
     def cambio_v(self, ventana=""):
         self.frame_principal.destroy()
         return eval(ventana)
 
-
     def v_entrada(self):
-        self.frame_principal = Frame(self.principal)
+        self.frame_principal = Frame(self.principal, bg=self.fondo)
         self.frame_principal.pack(fill=BOTH, expand=True, padx=5, pady=60)
 
-        frame_bton_admin = Frame(self.frame_principal, padx=40)
+        frame_bton_admin = Frame(self.frame_principal, padx=40, bg=self.fondo)
         frame_bton_admin.pack(fill=X, expand=True)
-        bton_ingrso_admin = Button(frame_bton_admin, text="Admin",command=lambda:self.cambio_v('self.v_ingreso("admin")') ,font=("Cooper Black", 12), relief=RAISED, bd=5, width=8, height=2)
+        bton_ingrso_admin = Button(frame_bton_admin,bg=self.color_btn_admin, text="Admin",command=lambda:self.cambio_v('self.v_ingreso("admin")') ,font=("Cooper Black", 12), relief=RAISED, bd=5, width=8, height=2)
         bton_ingrso_admin.pack(side=RIGHT)
 
-        frame_fila1 = Frame(self.frame_principal, padx=60, pady=70)
+        frame_fila1 = Frame(self.frame_principal, padx=60, pady=70, bg=self.fondo)
         frame_fila1.pack(fill=X, expand=True)
 
-        btn_admin = Button(frame_fila1, text="Registro", font=("Cooper Black", 18), relief=RAISED, bd=5, width=10, height=2,
+        btn_admin = Button(frame_fila1, text="Registro",bg=self.color_btn_registrar, font=("Cooper Black", 18), relief=RAISED, bd=5, width=10, height=2,
                            padx=30, command=lambda: self.cambio_v("self.v_registro()"))
         btn_admin.pack(side=LEFT)
         btn_ingreso = Button(frame_fila1, text="Ingreso", font=("Cooper Black", 18), relief=RAISED, bd=5, width=10,
-                             height=2, padx=30, command=lambda:self.cambio_v("self.v_ingreso()"))
+                             height=2, padx=30,bg=self.color_btn_ingresar, command=lambda:self.cambio_v("self.v_ingreso()"))
         btn_ingreso.pack(side=RIGHT)
 
     def ingresar_app_admin(self):
@@ -107,6 +119,7 @@ class interfaz_grafica():
             print(respuesta)
             respuesta = respuesta.split("/")
             if respuesta[0] == "ingresado":
+                self.admin_name = respuesta[1]
                 self.frame_principal.destroy()
                 self.v_admin()
             elif respuesta[0] == "activo":
@@ -143,6 +156,7 @@ class interfaz_grafica():
                     hilo_jugando = threading.Thread(target=self.jugando)
                     hilo_jugando.start()
                 else:
+                    self.player_nombre = usuario
                     self.frame_principal.destroy()
                     self.v_admin()
             elif respuesta[0] == "activo":
@@ -156,60 +170,60 @@ class interfaz_grafica():
             self.cambio_v("self.v_ingreso()")
 
     def v_ingreso(self, tipo_user="player"):
-        self.frame_principal = Frame(self.principal)
+        self.frame_principal = Frame(self.principal, bg=self.fondo)
         self.frame_principal.pack(fill=BOTH, expand=True, padx=5, pady=160)
 
-        frame_fila1 = Frame(self.frame_principal, padx=80)
+        frame_fila1 = Frame(self.frame_principal, padx=80, bg=self.fondo)
         frame_fila1.pack(fill=X, expand=True)
-        label_usuario = Label(frame_fila1, text="Usuario:", anchor="e", font=("Cooper Black", 12,"italic"), width=10).pack(side=LEFT)
+        label_usuario = Label(frame_fila1,bg=self.fondo, text="Usuario:", anchor="e", font=("Cooper Black", 12,"italic"), width=10).pack(side=LEFT)
         self.entry_usuario = Entry(frame_fila1, width=35, font=("Comic Sans MS", 12,"bold"), justify=CENTER)
         self.entry_usuario.pack(side=RIGHT)
 
-        frame_fila2 = Frame(self.frame_principal, padx=80)
+        frame_fila2 = Frame(self.frame_principal, padx=80, bg=self.fondo)
         frame_fila2.pack(fill=X, expand=True)
-        label_contrasena = Label(frame_fila2, text="Contraseña:", anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
+        label_contrasena = Label(frame_fila2,bg=self.fondo, text="Contraseña:", anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
             side=LEFT)
         self.entry_contrasena = Entry(frame_fila2, width=35, font=("Comic Sans MS", 12, "bold"),justify=CENTER, show="*")
         self.entry_contrasena.pack(side=RIGHT)
 
-        frame_fila3 = Frame(self.frame_principal, padx=130)
+        frame_fila3 = Frame(self.frame_principal, padx=130, bg=self.fondo)
         frame_fila3.pack(fill=X, expand=True)
-        btn_salir = Button(frame_fila3, width=12, height=2, text="SALIR", font=("Cooper Black", 12, "italic"), command=lambda: self.cerrando()).pack(side=LEFT)
+        btn_salir = Button(frame_fila3, width=12, height=2, text="SALIR",bg=self.color_btn_salir, font=("Cooper Black", 12, "italic"), command=lambda: self.cerrando()).pack(side=LEFT)
         if tipo_user == "player":
-            btn_ingreso_juego = Button(frame_fila3, width=12, height=2, text="INGRESAR", font=("Cooper Black", 12, "italic"), command= lambda: self.ingresar_app()).pack(side=RIGHT)
+            btn_ingreso_juego = Button(frame_fila3,bg=self.color_btn_ingresar, width=12, height=2, text="INGRESAR", font=("Cooper Black", 12, "italic"), command= lambda: self.ingresar_app()).pack(side=RIGHT)
         else:
-            btn_ingreso_juego = Button(frame_fila3, width=12, height=2, text="INGRESAR", font=("Cooper Black", 12, "italic"), command= lambda: self.ingresar_app_admin()).pack(side=RIGHT)
+            btn_ingreso_juego = Button(frame_fila3,bg=self.color_btn_ingresar, width=12, height=2, text="INGRESAR", font=("Cooper Black", 12, "italic"), command= lambda: self.ingresar_app_admin()).pack(side=RIGHT)
 
     def v_registro(self):
-        self.frame_principal = Frame(self.principal)
+        self.frame_principal = Frame(self.principal, bg=self.fondo)
         self.frame_principal.pack(fill=BOTH, expand=True, padx=5, pady=130)
 
-        frame_fila1 = Frame(self.frame_principal,  padx=80)
+        frame_fila1 = Frame(self.frame_principal,  padx=80, bg=self.fondo)
         frame_fila1.pack(fill=X, expand=True)
-        label_nombre = Label(frame_fila1, text="Nombre:", anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
+        label_nombre = Label(frame_fila1, text="Nombre:",bg=self.fondo, anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
             side=LEFT)
         self.entry_nombre = Entry(frame_fila1, width=35, font=("Comic Sans MS", 12, "bold"), justify=CENTER)
         self.entry_nombre.pack(side=RIGHT)
 
-        frame_fila2 = Frame(self.frame_principal,  padx=80)
+        frame_fila2 = Frame(self.frame_principal,  padx=80, bg=self.fondo)
         frame_fila2.pack(fill=X, expand=True)
-        label_usuario = Label(frame_fila2, text="Usuario:", anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
+        label_usuario = Label(frame_fila2, text="Usuario:",bg=self.fondo, anchor="e", font=("Cooper Black", 12, "italic"), width=10).pack(
             side=LEFT)
         self.entry_usuario = Entry(frame_fila2, width=35, font=("Comic Sans MS", 12, "bold"), justify=CENTER)
         self.entry_usuario.pack(side=RIGHT)
 
-        frame_fila3 = Frame(self.frame_principal, padx=80)
+        frame_fila3 = Frame(self.frame_principal, padx=80, bg=self.fondo)
         frame_fila3.pack(fill=X, expand=True)
-        label_contrasena = Label(frame_fila3, text="Contraseña:", anchor="e", font=("Cooper Black", 12, "italic"),
+        label_contrasena = Label(frame_fila3,bg=self.fondo, text="Contraseña:", anchor="e", font=("Cooper Black", 12, "italic"),
                                  width=10).pack(
             side=LEFT)
         self.entry_contrasena = Entry(frame_fila3, width=35, font=("Comic Sans MS", 12, "bold"), justify=CENTER, show="*")
         self.entry_contrasena.pack(side=RIGHT)
 
-        frame_fila4 = Frame(self.frame_principal,  padx=130)
+        frame_fila4 = Frame(self.frame_principal,  padx=130, bg=self.fondo)
         frame_fila4.pack(fill=X, expand=True)
-        btn_salir = Button(frame_fila4, width=12, height=2, text="SALIR", font=("Cooper Black", 12, "italic"), command=lambda: self.cerrando()).pack(side=LEFT)
-        btn_ingreso_juego = Button(frame_fila4, width=12, height=2, text="REGISTRAR",
+        btn_salir = Button(frame_fila4, width=12, height=2, text="SALIR",bg=self.color_btn_salir, font=("Cooper Black", 12, "italic"), command=lambda: self.cerrando()).pack(side=LEFT)
+        btn_ingreso_juego = Button(frame_fila4,bg=self.color_btn_registrar, width=12, height=2, text="REGISTRAR",
                                    font=("Cooper Black", 12, "italic"), command=lambda: self.registrar_app()).pack(side=RIGHT)
 
     def registrar_app(self):
@@ -262,28 +276,28 @@ class interfaz_grafica():
             return
 
     def v_juego(self, funcion="self.fram_esperando()", player2=""):
-        self.frame_principal = Frame(self.principal)
+        self.frame_principal = Frame(self.principal, bg=self.fondo)
         self.frame_principal.pack(fill=BOTH, expand=True, padx=5, pady=30)
 
-        self.frame_fila1 = Frame(self.frame_principal, padx=50)
+        self.frame_fila1 = Frame(self.frame_principal, padx=50, bg=self.fondo)
         self.frame_fila1.pack(fill=X, side=TOP)
-        label_player1 = Label(self.frame_fila1, text=self.player_nombre, anchor="e", font=("Cooper Black", 20), width=10).pack(side=LEFT)
-        label_vs = Label(self.frame_fila1, text="vs", font=("Cooper Black", 20, "italic"), width=10).pack(side=LEFT)
-        label_player2 = Label(self.frame_fila1, text=player2, anchor="w", font=("Cooper Black", 20), width=10).pack(side=LEFT)
+        label_player1 = Label(self.frame_fila1,bg=self.fondo, text=self.player_nombre, anchor="e", font=("Cooper Black", 20), width=10).pack(side=LEFT)
+        label_vs = Label(self.frame_fila1,bg=self.fondo, text="vs", font=("Cooper Black", 20, "italic"), width=10).pack(side=LEFT)
+        label_player2 = Label(self.frame_fila1,bg=self.fondo, text=player2, anchor="w", font=("Cooper Black", 20), width=10).pack(side=LEFT)
 
         eval(funcion)
 
     def fram_esperando(self):
-        self.frame_fila2 = Frame(self.frame_principal, padx=30)
+        self.frame_fila2 = Frame(self.frame_principal, padx=30, bg=self.fondo)
         self.frame_fila2.pack(fill=X, expand=True, side=TOP)
-        label_esperando = Label(self.frame_fila2, text="Esperando Oponente...", font=("Comic Sans MS", 25, "italic")).pack(
+        label_esperando = Label(self.frame_fila2,bg=self.fondo, text="Esperando Oponente...", font=("Comic Sans MS", 25, "italic")).pack(
             side=LEFT)
 
 
-        self.frame_puntos = Frame(self.frame_principal, padx=20)
+        self.frame_puntos = Frame(self.frame_principal, padx=20, bg=self.fondo)
         self.frame_puntos.pack(fill=X, side=TOP)
         puntaje = "Tienes: (%s puntos)" % str(self.player_puntos)
-        label_puntos = Label(self.frame_puntos, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
+        self.label_puntos = Label(self.frame_puntos,bg=self.fondo, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
 
     def act_btn_eleccion(self, eleccion):
         self.frame_fila2.destroy()
@@ -292,21 +306,21 @@ class interfaz_grafica():
         self.sock_players.send(mensaje.encode())
 
     def fram_jugando(self):
-        self.frame_fila2 = Frame(self.frame_principal, padx=60)
+        self.frame_fila2 = Frame(self.frame_principal, padx=60, bg=self.fondo)
         self.frame_fila2.pack(fill=X, expand=True)
-        btn_piedra = Button(self.frame_fila2, text="PIEDRA",command=lambda:self.act_btn_eleccion("Pi"), font=("Comic Sans MS", 25, "italic"), width=8, heigh=2).pack(
+        btn_piedra = Button(self.frame_fila2, text="PIEDRA",bg=self.color_btn_piedra, command=lambda:self.act_btn_eleccion("Pi"), font=("Comic Sans MS", 25, "italic"), width=8, heigh=2).pack(
             side=LEFT)
-        label_en_blanco = Label(self.frame_fila2, text=" ").pack(side=LEFT, fill=Y)
-        btn_papel = Button(self.frame_fila2, text="PAPEL",command=lambda:self.act_btn_eleccion("Pa"), font=("Comic Sans MS", 25, "italic"),width=8,heigh=2).pack(
+        label_en_blanco = Label(self.frame_fila2,bg=self.fondo, text=" ").pack(side=LEFT, fill=Y)
+        btn_papel = Button(self.frame_fila2, text="PAPEL",bg=self.color_btn_papel, command=lambda:self.act_btn_eleccion("Pa"), font=("Comic Sans MS", 25, "italic"),width=8,heigh=2).pack(
             side=LEFT)
-        label_en_blanco = Label(self.frame_fila2, text=" ").pack(side=LEFT, fill=Y)
-        btn_tijera = Button(self.frame_fila2, text="TIJERA",command=lambda:self.act_btn_eleccion("T"), font=("Comic Sans MS", 25, "italic"),width=8,heigh=2).pack(
+        label_en_blanco = Label(self.frame_fila2,bg=self.fondo, text=" ").pack(side=LEFT, fill=Y)
+        btn_tijera = Button(self.frame_fila2, text="TIJERA",bg=self.color_btn_tijera, command=lambda:self.act_btn_eleccion("T"), font=("Comic Sans MS", 25, "italic"),width=8,heigh=2).pack(
             side=LEFT)
 
-        self.frame_puntos = Frame(self.frame_principal, padx=20)
+        self.frame_puntos = Frame(self.frame_principal, padx=20, bg=self.fondo)
         self.frame_puntos.pack(fill=X, side=TOP)
         puntaje = "Tienes: (%s puntos)" % str(self.player_puntos)
-        label_puntos = Label(self.frame_puntos, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
+        self.label_puntos = Label(self.frame_puntos,bg=self.fondo, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
 
     def obtener_figura(self, texto):
         if texto == "Pa":
@@ -319,36 +333,36 @@ class interfaz_grafica():
 
 
     def fram_ganador(self, txt_ganador="", eleccion_player1="",  eleccion_player2="", noError = True):
-        frame_fila2 = Frame(self.frame_principal, padx=120)
+        frame_fila2 = Frame(self.frame_principal, padx=120, bg=self.fondo)
         frame_fila2.pack(fill=X, expand=True)
         if noError:
-            label_eleccion_player1 = Label(frame_fila2, text=eleccion_player1, font=("Arial", 93), width=2, heigh=1).pack(
+            label_eleccion_player1 = Label(frame_fila2,bg=self.color_label_elecci, text=eleccion_player1, font=("Arial", 93), width=2, heigh=1).pack(
                 side=LEFT)
-            label_vs = Label(frame_fila2, text="vs", font=("Comic Sans MS", 25, "italic"), width=5, heigh=3).pack(
+            label_vs = Label(frame_fila2, text="vs",bg = self.color_label_elecci, font=("Comic Sans MS", 25, "italic"), width=5, heigh=3).pack(
                 side=LEFT)
-            label_eleccion_player2 = Label(frame_fila2, text=eleccion_player2, font=("Arial", 93), width=2, heigh=1).pack(
+            label_eleccion_player2 = Label(frame_fila2,bg=self.color_label_elecci, text=eleccion_player2, font=("Arial", 93), width=2, heigh=1).pack(
                 side=LEFT)
 
-        frame_fila3 = Frame(self.frame_principal, padx=100)
+        frame_fila3 = Frame(self.frame_principal, padx=100, bg=self.fondo)
         frame_fila3.pack(fill=X, expand=True)
-        label_ganador = Label(frame_fila3, text=txt_ganador, font=("Comic Sans MS", 20, "italic"),
+        label_ganador = Label(frame_fila3,bg=self.fondo, text=txt_ganador, font=("Comic Sans MS", 20, "italic"),
                               width=40).pack(
             side=LEFT)
 
-        self.frame_puntos = Frame(self.frame_principal, padx=20)
+        self.frame_puntos = Frame(self.frame_principal, padx=20, bg=self.fondo)
         self.frame_puntos.pack(fill=X, side=TOP)
         puntaje = "Tienes: (%s puntos)" % str(self.player_puntos)
-        label_puntos = Label(self.frame_puntos, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
+        self.label_puntos = Label(self.frame_puntos,bg=self.fondo, text=puntaje, font=("Cooper Black", 12, "italic")).pack(side=LEFT)
 
-        self.frame_fila4 = Frame(self.frame_principal, padx=140)
+        self.frame_fila4 = Frame(self.frame_principal, padx=140, bg=self.fondo)
         self.frame_fila4.pack(fill=X, expand=False, side=BOTTOM)
 
 
         if noError:
-            btn_jugar=Button(self.frame_fila4, text="VOLVER A JUGAR",command=lambda: self.cambio_v("self.v_juego('self.fram_jugando()', self.label_player2)"), width=16, heigh=1, font=("Cooper Black", 16)).pack(side=LEFT)
-            btn_atras=Button(self.frame_fila4, text="SALIR", width=7, heigh=1, font=("Cooper Black", 16), command=lambda: self.cerrando()).pack(side=RIGHT)
+            btn_jugar=Button(self.frame_fila4, text="VOLVER A JUGAR",bg=self.color_btn_ingresar, command=lambda: self.cambio_v("self.v_juego('self.fram_jugando()', self.label_player2)"), width=16, heigh=1, font=("Cooper Black", 16)).pack(side=LEFT)
+            btn_atras=Button(self.frame_fila4, text="SALIR", width=7, heigh=1,bg=self.color_btn_salir, font=("Cooper Black", 16), command=lambda: self.cerrando()).pack(side=RIGHT)
         else:
-            btn_atras=Button(self.frame_fila4, text="SALIR", width=7, heigh=1, font=("Cooper Black", 16), command=lambda: self.cerrando()).pack(side=RIGHT)
+            btn_atras=Button(self.frame_fila4, text="SALIR", width=7, heigh=1,bg=self.color_btn_salir, font=("Cooper Black", 16), command=lambda: self.cerrando()).pack(side=RIGHT)
 
 
     def texto_resultado(self, resultado, jugador):
@@ -364,29 +378,29 @@ class interfaz_grafica():
         return texto
 
     def v_admin(self):
-        self.frame_principal = Frame(self.principal)
+        self.frame_principal = Frame(self.principal, bg=self.fondo)
         self.frame_principal.pack(fill=BOTH, expand=True, padx=5, pady=90)
 
-        frame_fila1 = Frame(self.frame_principal, padx=15)
+        frame_fila1 = Frame(self.frame_principal, padx=15, bg=self.fondo)
         frame_fila1.pack(fill=X, side=TOP)
-        label_administracion = Label(frame_fila1, text="Estadísticas", anchor="w", font=("Cooper Black", 15)).pack(side=LEFT)
+        label_administracion = Label(frame_fila1,bg=self.fondo, text="Estadísticas", anchor="w", font=("Cooper Black", 15)).pack(side=LEFT)
 
-        frame_fila2 = Frame(self.frame_principal, padx=15, pady=30)
+        frame_fila2 = Frame(self.frame_principal, padx=15, pady=30, bg=self.fondo)
         frame_fila2.pack(fill=X, expand=True)
 
-        btn_jugadores = Button(frame_fila2, text="Jugadores", font=("Cooper Black", 17), relief=RAISED, bd=5, width=7, height=2,
+        btn_jugadores = Button(frame_fila2,bg=self.color_btn_tablas, text="Jugadores", font=("Cooper Black", 17), relief=RAISED, bd=5, width=7, height=2,
                            padx=30, command=lambda: self.toplevel("jugadores"))
         btn_jugadores.grid(row=0, column=0, )
-        btn_mejor_jugador = Button(frame_fila2, text="Mejores jugadores", font=("Cooper Black", 17), relief=RAISED, bd=5, width=11,
+        btn_mejor_jugador = Button(frame_fila2,bg=self.color_btn_tablas, text="Mejores jugadores", font=("Cooper Black", 17), relief=RAISED, bd=5, width=11,
                              height=2, padx=30, command=lambda: self.toplevel("mejor_jugador"))
         btn_mejor_jugador.grid(row=0, column=1)
-        btn_juego = Button(frame_fila2, text="Juegos", font=("Cooper Black", 17), relief=RAISED, bd=5, width=7,
+        btn_juego = Button(frame_fila2,bg=self.color_btn_tablas, text="Juegos", font=("Cooper Black", 17), relief=RAISED, bd=5, width=7,
                              height=2, padx=30, command=lambda: self.toplevel("juegos"))
         btn_juego.grid(row=0, column=2)
 
-        frame_fila3 = Frame(self.frame_principal, padx=140, pady=30)
+        frame_fila3 = Frame(self.frame_principal, padx=140, pady=30, bg=self.fondo)
         frame_fila3.pack(fill=X, expand=False, side=BOTTOM)
-        btn_atras = Button(frame_fila3, text="SALIR", width=7, heigh=1,relief=RAISED, bd=5, font=("Cooper Black", 14),
+        btn_atras = Button(frame_fila3, text="SALIR",bg=self.color_btn_salir, width=7, heigh=1,relief=RAISED, bd=5, font=("Cooper Black", 14),
                            command=lambda: self.cerrando()).pack(side=RIGHT)
 
     def toplevel(self, tabla):
