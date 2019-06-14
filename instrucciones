@@ -1,0 +1,21 @@
+JaJanKen (piedra, papel o Tijera)
+juego desarrolado en lenguaje Python v3.7
+uso de sockets e hilos
+paradigma Poo
+Interfaz Gráfica con el modulo de Tkinter
+Conexión a base de datos a traves de mysql.connector
+
+autores:
+
+Daniel Cardozo H
+Cristian Chivata
+Santiago Giraldo
+
+Para un facil ejemplo se debe importar la base de datos, seguido de la ejecución del servidor, y por último la ejecución de dos clientes
+por defecto el host será "127.0.0.1" y el puerto 10000 para la jugadores, y 10001 para los administradores.
+
+Para ver las opciones de administrador, en la ventana de entrada, oprimir el botón con nombre "admin", en los campos de
+usuario y contraseña escribir "admin" y "admin" para ingresar a la aplicación como administrador
+
+Para ingresar como jugador, se puede crear el usuario oprimiendo el botón "registro" o entrar a la aplicación con el usuario "j1"
+que tiene como contraseña "j1". para el desarrollo del juego es necesario un segundo jugador, para la prueba se puede ingresar con el usuario "j2" y contraseña "j2"
